@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反应时间测试</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #2196f3;
+        }
+        #testContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap; /* 添加这一行，以防止按钮在小屏幕上溢出 */
+        }
+        #testCount {
+            width: 50px;
+            padding: 4px;
+            margin-right: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        #startBtn, #stopBtn,#exportBtn {
+            background-color: #2196f3;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        #startBtn:disabled, #stopBtn:disabled ,#exportBtn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #colorBox {
+            width: 200px;
+            height: 200px;
+            background-color: #fff;
+            margin: 0 auto; /* 添加这一行，使其水平居中 */
+            margin-bottom: 16px;
+            border: 2px solid #2196f3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border: 2px solid #2196f3;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f5f5f5;
+            color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <h1>反应时间测试</h1>
+    <div id="testContainer">
+        <label for="testCount">测试次数：</label>
+        <input type="number" id="testCount" min="1" value="1">
+        <button id="startBtn">开始</button>
+        
+        <button id="stopBtn" disabled>停止</button>
+        <button id="exportBtn" disabled>导出 Excel</button>
+    </div>
+    <div id="colorBox"></div>
+    <table>
+        <thead>
+            <tr>
+                <th>次数</th>
+                <th>反应时间 (ms)</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script>
+        const colorBox = document.getElementById('colorBox');
+        const testCount = document.getElementById('testCount');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const results = document.getElementById('results');
+        
+        const exportBtn = document.getElementById('exportBtn');
+        
+        const FAIL_VALUE = 5000; // 测试失败的反应时间设置为 5000 毫秒
+        let startTime;
+        let timer;
+        let testIndex = 0;
+        let reactionTimes = [];
+        let userStopped = false; // 添加一个变量来标识用户是否停止了测试
+        let cheage = false;
+        let countdownId;
+        let isdid  = false;
+        exportBtn.disabled =true;
+        function startTest() {
+            startBtn.disabled = true;
+            testCount.disabled = true;
+            stopBtn.disabled = false;
+
+            let countdown = Math.random() * 2000 + 1000;
+            countdownId =  setTimeout(() => {
+                colorBox.style.backgroundColor = '#4caf50';
+                cheage = true;
+                startTime = new Date().getTime();
+                timer = setTimeout(() => {
+                    
+                        failTest();
+                }, 5000);
+            }, countdown);
+        }
+
+        function stopTest() {
+            if(cheage==false){
+                clearTimeout(countdownId);
+                cheage = false;
+            
+                failTest();
+                return;
+            }
+            clearTimeout(timer);
+            let reactionTime = new Date().getTime() - startTime;
+
+            reactionTimes.push(reactionTime);
+
+            let newRow = results.insertRow();
+            newRow.innerHTML = `<td>${testIndex + 1}</td><td>${reactionTime}</td>`;
+            testIndex++;
+
+            colorBox.style.backgroundColor ='#fff';
+            cheage =false;
+
+            if (testIndex < testCount.value) { // 如果用户没有停止测试且还有测试次数，则继续测试
+                startTest();    
+            } else { // 否则重置测试
+              
+                finishTest();
+               
+            }
+        }
+
+        function failTest() {
+            reactionTimes.push(FAIL_VALUE);
+
+            let newRow = results.insertRow();
+            newRow.innerHTML = `<td>${testIndex + 1}</td><td>失败</td>`;
+            testIndex++;
+
+            colorBox.style.backgroundColor ='#fff';
+
+            if (testIndex < testCount.value) {
+                startTest();
+            } else {
+                finishTest();
+            }
+        }
+
+
+        function finishTest() {
+            let sum = reactionTimes.reduce((acc, val) => acc + val, 0);
+            let average = sum / testIndex;
+            
+            let newRow = results.insertRow();
+            newRow.innerHTML = `<td>平均值</td><td>${average.toFixed(2)}</td>`;
+
+            startBtn.disabled = false;
+            testCount.disabled = false;
+            stopBtn.disabled = true;
+            exportBtn.disabled = false;
+            reactionTimes = [];
+            testIndex = 0;
+        }
+
+        startBtn.addEventListener('click', () => {
+            results.innerHTML = '';
+            startTest();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            stopTest();
+        });
+
+exportBtn.addEventListener('click', () => {
+    const name =  prompt("请输入姓名");
+  const data = [["次数", "反应时间 (ms)"]]; // 表格数据，第一行为表头
+  const rows = results.querySelectorAll("tr"); // 获取所有行
+  for (let i = 1; i < rows.length; i++) { // 从第二行开始遍历，第一行为表头
+    const cells = rows[i].querySelectorAll("td"); // 获取当前行的所有单元格
+    const rowData = [cells[0].textContent, cells[1].textContent]; // 将单元格数据添加到行数据中
+    data.push(rowData); // 将行数据添加到表格数据中
+  }
+
+  const sheet = XLSX.utils.json_to_sheet(data); // 将表格数据转换为工作表数据
+  const workbook = XLSX.utils.book_new(); // 创建工作簿
+  XLSX.utils.book_append_sheet(workbook, sheet, "反应时间测试"); // 将工作表添加到工作簿中
+
+  const testName = `反应时间测试_${testCount.value}_${new Date().getTime()}_${name}.xlsx`; // 组合测试名称，包括测试次数、测试时间和姓名
+  XLSX.writeFile(workbook, testName); // 将工作簿保存为 Excel 文件，文件名包括测试名称
+});
+    </script>
+</body>
+</html>
