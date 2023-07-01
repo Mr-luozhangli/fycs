@@ -79,7 +79,7 @@
         <button id="exportBtn" disabled>导出 Excel</button>
     </div>
     <div id="colorBox"></div>
-    <table>
+    <table id = "table1">
         <thead>
             <tr>
                 <th>次数</th>
@@ -200,19 +200,52 @@ exportBtn.addEventListener('click', () => {
     if(name==null){
         return;
     }
-  const data = [["次数", "反应时间 (ms)"]]; // 表格数据，第一行为表头
-  const rows = results.querySelectorAll("tr"); // 获取所有行
-  for (let i = 1; i < rows.length; i++) { // 从第二行开始遍历，第一行为表头
-    const cells = rows[i].querySelectorAll("td"); // 获取当前行的所有单元格
-    const rowData = [cells[0].textContent, cells[1].textContent]; // 将单元格数据添加到行数据中
-    data.push(rowData); // 将行数据添加到表格数据中
-  }
+//   const data = [["次数", "反应时间 (ms)"]]; // 表格数据，第一行为表头
+//   const rows = results.querySelectorAll("tr"); // 获取所有行
+//   for (let i = 0; i < rows.length; i++) { // 从第二行开始遍历，第一行为表头
+//     const cells = rows[i].querySelectorAll("td"); // 获取当前行的所有单元格
+//     const rowData = [cells[0].textContent, cells[1].textContent]; // 将单元格数据添加到行数据中
+//     data.push(rowData); // 将行数据添加到表格数据中
+//   }
+// js 格式化 date 对象，输出格式为 yyyy-MM-dd HH:mm:ss 字符串
+function jsDateFormatter( dateInput ) {  // dateInput 是一个 js 的 Date 对象
+        var year = dateInput.getFullYear();
+        var month = dateInput.getMonth() + 1;
+        var theDate = dateInput.getDate();
 
-  const sheet = XLSX.utils.json_to_sheet(data); // 将表格数据转换为工作表数据
+        var hour = dateInput.getHours();
+        var minute = dateInput.getMinutes();
+        var second = dateInput.getSeconds();
+
+        if ( month < 10 ) {
+            month = '0' + month;
+        }
+
+        if ( theDate < 10 ) {
+            theDate = '0' + theDate;
+        }
+
+        if ( hour < 10 ) {
+            hour = '0' + hour;
+        }
+
+        if ( minute < 10 ) {
+            minute = '0' + minute;
+        }
+
+        if ( second < 10 ) {
+            second = '0' + second;
+        }
+
+        return year +"-"+ month +"-" + theDate + " "+ hour +":"+ minute +":"+ second;
+}
+  var table1 = document.querySelector("#table1");
+  const sheet = XLSX.utils.table_to_sheet(table1); // 将表格数据转换为工作表数据
   const workbook = XLSX.utils.book_new(); // 创建工作簿
   XLSX.utils.book_append_sheet(workbook, sheet, "反应时间测试"); // 将工作表添加到工作簿中
+ var time = jsDateFormatter(new Date());
 
-  const testName = `反应时间测试_${testCount.value}_${new Date().getTime()}_${name}.xlsx`; // 组合测试名称，包括测试次数、测试时间和姓名
+const testName = `反应时间测试_${testCount.value}_${time}_${name}.xlsx`; // 组合测试名称，包括测试次数、测试时间和姓名
   XLSX.writeFile(workbook, testName); // 将工作簿保存为 Excel 文件，文件名包括测试名称
 });
     </script>
