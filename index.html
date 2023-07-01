@@ -197,6 +197,9 @@
 
 exportBtn.addEventListener('click', () => {
     const name =  prompt("请输入姓名");
+    if(name==null){
+        return;
+    }
   const data = [["次数", "反应时间 (ms)"]]; // 表格数据，第一行为表头
   const rows = results.querySelectorAll("tr"); // 获取所有行
   for (let i = 1; i < rows.length; i++) { // 从第二行开始遍历，第一行为表头
